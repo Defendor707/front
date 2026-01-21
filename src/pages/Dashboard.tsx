@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatPercent, formatSeconds, timeAgo } from "@/lib/format"
+import { USE_REAL_API, FORCE_REAL_API } from "@/lib/apiConfig"
 import {
   getAnalytics,
   getDashboardSummary,
@@ -61,10 +62,14 @@ export function DashboardPage() {
         <div>
           <h2 className="text-lg font-semibold">Overview</h2>
           <p className="text-sm text-muted-foreground">
-            Real-time snapshot (mock data until backend is connected).
+            {USE_REAL_API || FORCE_REAL_API
+              ? "Real-time snapshot from backend API."
+              : "Real-time snapshot (mock data until backend is connected)."}
           </p>
         </div>
-        <Badge variant="secondary">Demo</Badge>
+        {!(USE_REAL_API || FORCE_REAL_API) && (
+          <Badge variant="secondary">Demo</Badge>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

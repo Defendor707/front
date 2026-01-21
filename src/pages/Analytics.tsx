@@ -20,6 +20,7 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatPercent, formatSeconds } from "@/lib/format"
+import { USE_REAL_API, FORCE_REAL_API } from "@/lib/apiConfig"
 import { getAnalytics } from "@/services/api"
 import { queryKeys } from "@/services/queryKeys"
 import type { AnalyticsSnapshot } from "@/types/models"
@@ -91,7 +92,9 @@ export function AnalyticsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">Demo</Badge>
+          {!(USE_REAL_API || FORCE_REAL_API) && (
+            <Badge variant="secondary">Demo</Badge>
+          )}
           <Button
             type="button"
             variant="outline"

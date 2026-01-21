@@ -13,11 +13,12 @@ RUN npm ci --only=production=false
 COPY . .
 
 # Build application
-ARG VITE_API_BASE_URL
-ARG VITE_WS_BASE_URL
+ARG VITE_API_BASE_URL=https://api.call-center.uzbek-talim.uz/api
+ARG VITE_WS_BASE_URL=wss://api.call-center.uzbek-talim.uz/api
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_WS_BASE_URL=$VITE_WS_BASE_URL
 
+# Production build (real API'ga avtomatik ulanadi)
 RUN npm run build
 
 # Production stage

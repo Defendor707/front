@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { USE_REAL_API, FORCE_REAL_API } from "@/lib/apiConfig"
 import { useAuthStore } from "@/stores/authStore"
 import { useSettingsStore } from "@/stores/settingsStore"
 
@@ -98,7 +99,9 @@ export function SettingsPage() {
             Profile, notifications, Twilio, and AI configuration.
           </p>
         </div>
-        <Badge variant="secondary">Demo</Badge>
+        {!(USE_REAL_API || FORCE_REAL_API) && (
+          <Badge variant="secondary">Demo</Badge>
+        )}
       </div>
 
       <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>

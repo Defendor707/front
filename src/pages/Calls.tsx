@@ -18,6 +18,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatSeconds, timeAgo } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { USE_REAL_API, FORCE_REAL_API } from "@/lib/apiConfig"
 import { listCalls, listUsers } from "@/services/api"
 import { queryKeys } from "@/services/queryKeys"
 import type { CallStatus } from "@/types/models"
@@ -62,7 +63,9 @@ export function CallsPage() {
             Call history, recordings, transcripts, and AI notes.
           </p>
         </div>
-        <Badge variant="secondary">Demo</Badge>
+        {!(USE_REAL_API || FORCE_REAL_API) && (
+          <Badge variant="secondary">Demo</Badge>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

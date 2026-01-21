@@ -18,6 +18,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { timeAgo } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { USE_REAL_API, FORCE_REAL_API } from "@/lib/apiConfig"
 import { listChats, listUsers, sendChatMessage } from "@/services/api"
 import { queryKeys } from "@/services/queryKeys"
 import type { ChatStatus } from "@/types/models"
@@ -101,7 +102,9 @@ export function ChatsPage() {
             <MessageSquarePlus className="mr-2 h-4 w-4" />
             New chat
           </Button>
-          <Badge variant="secondary">Demo</Badge>
+          {!(USE_REAL_API || FORCE_REAL_API) && (
+            <Badge variant="secondary">Demo</Badge>
+          )}
         </div>
       </div>
 

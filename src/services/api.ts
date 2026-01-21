@@ -1,5 +1,5 @@
 import { analytics, calls, chats, users } from "@/mock/data"
-import { API_BASE_URL } from "@/lib/apiConfig"
+import { API_BASE_URL, USE_REAL_API, FORCE_REAL_API } from "@/lib/apiConfig"
 import type {
   AnalyticsSnapshot,
   Call,
@@ -12,17 +12,31 @@ import type {
 
 const latency = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
+// Real API mavjudligini tekshirish
+const isRealAPIEnabled = USE_REAL_API || FORCE_REAL_API
+
 // Backend API chaqiruvlari uchun helper (backend tayyor bo'lganda ishlatiladi)
 export async function apiRequest<T>(
   endpoint: string,
   options?: RequestInit,
 ): Promise<T> {
+  // Token'ni header'ga qo'shish
+  const token = typeof window !== "undefined" 
+    ? localStorage.getItem("ai_call_center.token") 
+    : null
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options?.headers as Record<string, string>),
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
     ...options,
+    headers,
   })
 
   if (!response.ok) {
@@ -60,6 +74,17 @@ function paginate<T>(items: T[], page: number, pageSize: number) {
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
+  // Real API'ga ulanadi agar production'da va API URL sozlangan bo'lsa
+  if (isRealAPIEnabled) {
+    try {
+      return await apiRequest<DashboardSummary>("/dashboard/summary")
+    } catch (error) {
+      console.error("Failed to fetch dashboard from API, falling back to mock:", error)
+      // Fallback to mock if API fails
+    }
+  }
+
+  // Mock data (development yoki API mavjud emas bo'lsa)
   await latency()
 
   const today = new Date()
@@ -89,6 +114,24 @@ export type ListChatsParams = {
 }
 
 export async function listChats(params: ListChatsParams = {}) {
+  // Real API'ga ulanadi
+  if (isRealAPIEnabled) {
+    try {
+      const queryParams = new URLSearchParams()
+      if (params.query) queryParams.append("query", params.query)
+      if (params.status && params.status !== "all") queryParams.append("status", params.status)
+      queryParams.append("page", String(params.page || 1))
+      queryParams.append("pageSize", String(params.pageSize || 20))
+      
+      return await apiRequest<{ page: number; pageSize: number; total: number; items: Chat[] }>(
+        `/chats?${queryParams.toString()}`
+      )
+    } catch (error) {
+      console.error("Failed to fetch chats from API, falling back to mock:", error)
+    }
+  }
+
+  // Mock data
   await latency()
   const { query = "", status = "all", page = 1, pageSize = 20 } = params
 
@@ -116,6 +159,16 @@ export async function listChats(params: ListChatsParams = {}) {
 }
 
 export async function getChatById(id: ID): Promise<Chat | null> {
+  // Real API'ga ulanadi
+  if (isRealAPIEnabled) {
+    try {
+      return await apiRequest<Chat>(`/chats/${id}`)
+    } catch (error) {
+      console.error("Failed to fetch chat from API, falling back to mock:", error)
+    }
+  }
+
+  // Mock data
   await latency(180)
   return chats.find((c) => c.id === id) ?? null
 }
@@ -128,6 +181,24 @@ export type ListCallsParams = {
 }
 
 export async function listCalls(params: ListCallsParams = {}) {
+  // Real API'ga ulanadi
+  if (isRealAPIEnabled) {
+    try {
+      const queryParams = new URLSearchParams()
+      if (params.query) queryParams.append("query", params.query)
+      if (params.status && params.status !== "all") queryParams.append("status", params.status)
+      queryParams.append("page", String(params.page || 1))
+      queryParams.append("pageSize", String(params.pageSize || 20))
+      
+      return await apiRequest<{ page: number; pageSize: number; total: number; items: Call[] }>(
+        `/calls?${queryParams.toString()}`
+      )
+    } catch (error) {
+      console.error("Failed to fetch calls from API, falling back to mock:", error)
+    }
+  }
+
+  // Mock data
   await latency()
   const { query = "", status = "all", page = 1, pageSize = 20 } = params
 
@@ -154,16 +225,46 @@ export async function listCalls(params: ListCallsParams = {}) {
 }
 
 export async function getCallById(id: ID): Promise<Call | null> {
+  // Real API'ga ulanadi
+  if (isRealAPIEnabled) {
+    try {
+      return await apiRequest<Call>(`/calls/${id}`)
+    } catch (error) {
+      console.error("Failed to fetch call from API, falling back to mock:", error)
+    }
+  }
+
+  // Mock data
   await latency(180)
   return calls.find((c) => c.id === id) ?? null
 }
 
 export async function getUserById(id: ID): Promise<User | null> {
+  // Real API'ga ulanadi
+  if (isRealAPIEnabled) {
+    try {
+      return await apiRequest<User>(`/users/${id}`)
+    } catch (error) {
+      console.error("Failed to fetch user from API, falling back to mock:", error)
+    }
+  }
+
+  // Mock data
   await latency(120)
   return users.find((u) => u.id === id) ?? null
 }
 
 export async function listUsers(): Promise<User[]> {
+  // Real API'ga ulanadi
+  if (isRealAPIEnabled) {
+    try {
+      return await apiRequest<User[]>("/users")
+    } catch (error) {
+      console.error("Failed to fetch users from API, falling back to mock:", error)
+    }
+  }
+
+  // Mock data
   await latency(150)
   return [...users]
 }
@@ -171,6 +272,16 @@ export async function listUsers(): Promise<User[]> {
 export async function getAnalytics(
   range: AnalyticsSnapshot["range"] = "7d",
 ): Promise<AnalyticsSnapshot> {
+  // Real API'ga ulanadi
+  if (isRealAPIEnabled) {
+    try {
+      return await apiRequest<AnalyticsSnapshot>(`/analytics?range=${range}`)
+    } catch (error) {
+      console.error("Failed to fetch analytics from API, falling back to mock:", error)
+    }
+  }
+
+  // Mock data
   await latency()
   return { ...analytics, range }
 }
@@ -198,18 +309,20 @@ export type ChatMessageResponse = {
 export async function sendChatMessage(
   params: SendChatMessageParams,
 ): Promise<ChatMessageResponse> {
-  // Backend tayyor bo'lganda quyidagi kodni ishlatish:
-  // try {
-  //   return await apiRequest<ChatMessageResponse>("/ai/chat", {
-  //     method: "POST",
-  //     body: JSON.stringify(params),
-  //   })
-  // } catch (error) {
-  //   console.error("AI chat error:", error)
-  //   throw error
-  // }
+  // Real API'ga ulanadi (production'da avtomatik)
+  if (isRealAPIEnabled) {
+    try {
+      return await apiRequest<ChatMessageResponse>("/ai/chat", {
+        method: "POST",
+        body: JSON.stringify(params),
+      })
+    } catch (error) {
+      console.error("AI chat error:", error)
+      throw error
+    }
+  }
 
-  // Mock mode (backend tayyor bo'lguncha)
+  // Mock mode (development yoki API mavjud emas bo'lsa)
   await latency(800)
 
   const mockResponse: ChatMessageResponse = {
@@ -268,16 +381,18 @@ export type AICallResponse = {
 export async function startAICall(
   params: StartAICallParams,
 ): Promise<AICallResponse> {
-  // Backend tayyor bo'lganda quyidagi kodni ishlatish:
-  // try {
-  //   return await apiRequest<AICallResponse>("/ai/call/start", {
-  //     method: "POST",
-  //     body: JSON.stringify(params),
-  //   })
-  // } catch (error) {
-  //   console.error("Start AI call error:", error)
-  //   throw error
-  // }
+  // Real API'ga ulanadi (production'da avtomatik)
+  if (isRealAPIEnabled) {
+    try {
+      return await apiRequest<AICallResponse>("/ai/call/start", {
+        method: "POST",
+        body: JSON.stringify(params),
+      })
+    } catch (error) {
+      console.error("Start AI call error:", error)
+      throw error
+    }
+  }
 
   // Mock mode
   await latency(600)
