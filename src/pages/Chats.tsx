@@ -1,7 +1,7 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import { Search } from "lucide-react"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { MessageSquarePlus, Search } from "lucide-react"
 import { useMemo, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,13 +18,16 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { timeAgo } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import { listChats, listUsers } from "@/services/api"
+import { listChats, listUsers, sendChatMessage } from "@/services/api"
 import { queryKeys } from "@/services/queryKeys"
 import type { ChatStatus } from "@/types/models"
 
 type StatusFilter = "all" | ChatStatus
 
 export function ChatsPage() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState<StatusFilter>("all")
   const [page, setPage] = useState(1)
@@ -39,6 +42,33 @@ export function ChatsPage() {
     queryKey: queryKeys.chats({ query, status, page, pageSize }),
     queryFn: () => listChats({ query, status, page, pageSize }),
     placeholderData: keepPreviousData,
+  })
+
+  const createChatMutation = useMutation({
+    mutationFn: async () => {
+      // Demo: birinchi foydalanuvchini tanlash
+      const firstUser = usersQuery.data?.[0]
+      if (!firstUser) throw new Error("No users available")
+
+      // Yangi chat yaratish (backend'da real bo'lsa, API chaqiruvi)
+      const response = await sendChatMessage({
+        userId: firstUser.id,
+        message: "Salom, AI yordamchi bilan gaplashmoqchiman.",
+        userContext: {
+          name: firstUser.fullName,
+          phone: firstUser.phone,
+          language: firstUser.language,
+        },
+      })
+
+      return response.chatId
+    },
+    onSuccess: (chatId) => {
+      // Chat list'ni yangilash
+      queryClient.invalidateQueries({ queryKey: queryKeys.chats({}) })
+      // Yangi chat'ga o'tish
+      navigate(`/chats/${chatId}`)
+    },
   })
 
   const usersById = new Map(usersQuery.data?.map((u) => [u.id, u]) ?? [])
@@ -62,7 +92,17 @@ export function ChatsPage() {
             Browse conversations, AI summaries, and user details.
           </p>
         </div>
-        <Badge variant="secondary">Demo</Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            onClick={() => createChatMutation.mutate()}
+            disabled={createChatMutation.isPending || !usersQuery.data?.length}
+          >
+            <MessageSquarePlus className="mr-2 h-4 w-4" />
+            New chat
+          </Button>
+          <Badge variant="secondary">Demo</Badge>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
