@@ -62,7 +62,7 @@ export function ChatDetailPage() {
     queryKey: queryKeys.chat(chatId),
     queryFn: () => getChatById(chatId),
     enabled: Boolean(chatId),
-    refetchInterval: (query) => {
+    refetchInterval: () => {
       // Real-time chat uchun polling (backend WebSocket bo'lsa uni ishlatamiz)
       return false
     },

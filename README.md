@@ -1,4 +1,89 @@
-# React + TypeScript + Vite
+# AI Call Center Frontend
+
+Zamonaviy AI-powered Call Center operator console — Ta'lim vazirligi va boshqa tashkilotlar uchun professional frontend yechimi.
+
+## Xususiyatlar
+
+- 🤖 **AI Chat**: Real-time chat AI yordamchisi bilan (foydalanuvchi konteksti bilan)
+- 📞 **Live Calls**: Twilio Voice SDK orqali real-time qo'ng'iroqlar
+- 🗣️ **AI Conversation**: Qo'ng'iroq paytida AI konteksti va suggestions
+- 👤 **User Context**: AI foydalanuvchi ismini va ma'lumotlarini eslab qoladi
+- 📊 **Analytics**: Statistikalar, grafiklar, va hisobotlar
+- 🎨 **Modern UI**: Tailwind CSS + shadcn/ui bilan professional dizayn
+- 🌓 **Dark Mode**: Light/Dark/System tema
+
+## Texnologiyalar
+
+- React 19 + TypeScript
+- Vite (tez build va HMR)
+- Tailwind CSS + shadcn/ui
+- React Router v6
+- TanStack Query (React Query)
+- Zustand (state management)
+- Twilio Voice SDK
+- Recharts (statistikalar)
+- Framer Motion (animatsiyalar)
+
+## Quick Start
+
+```bash
+npm install
+npm run dev
+```
+
+### Environment Variables
+
+Create `.env` file:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
+VITE_WS_BASE_URL=ws://localhost:8000/api
+```
+
+### Demo Login
+
+- Email: `operator@demo.uz`
+- Password: `password`
+
+### AI Integration
+
+The frontend is ready for backend API integration. Update `src/services/api.ts` to connect to your backend:
+
+- Chat messages: `POST /api/ai/chat`
+- Call transcripts: `POST /api/ai/call/{callId}/transcript`
+- User context: Stored locally, can sync with backend
+
+### Twilio Setup
+
+1. Get Twilio access token from your backend
+2. Go to Settings → Paste token
+3. Go to Live Call → Register device
+4. Start making/receiving calls
+
+## Project Structure
+
+```
+src/
+├── components/     # UI components (shadcn/ui + custom)
+├── pages/          # Route pages
+├── stores/         # Zustand stores (auth, settings, user context)
+├── services/       # API services
+├── hooks/          # Custom hooks (Twilio, audio level)
+├── lib/            # Utilities
+└── types/          # TypeScript types
+```
+
+## Development
+
+```bash
+npm run dev      # Start dev server
+npm run build    # Production build
+npm run lint     # Run ESLint
+```
+
+---
+
+## React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

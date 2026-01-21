@@ -4,7 +4,6 @@ import type {
   AnalyticsSnapshot,
   Call,
   Chat,
-  ChatMessage,
   ChatStatus,
   DashboardSummary,
   ID,
@@ -13,8 +12,8 @@ import type {
 
 const latency = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
-// Backend API chaqiruvlari uchun helper
-async function apiRequest<T>(
+// Backend API chaqiruvlari uchun helper (backend tayyor bo'lganda ishlatiladi)
+export async function apiRequest<T>(
   endpoint: string,
   options?: RequestInit,
 ): Promise<T> {
@@ -299,7 +298,7 @@ export type AICallTranscriptResponse = {
 }
 
 export async function sendCallTranscript(
-  params: SendCallTranscriptParams,
+  _params: SendCallTranscriptParams,
 ): Promise<AICallTranscriptResponse> {
   // Backend tayyor bo'lganda:
   // const formData = new FormData()

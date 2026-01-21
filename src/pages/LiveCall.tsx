@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 import { useAudioLevel } from "@/hooks/useAudioLevel"
 import { useTwilioVoice } from "@/hooks/useTwilioVoice"
 import {
-  sendCallTranscript,
+  // sendCallTranscript, // Keyinroq real-time transcript uchun
   startAICall,
   type StartAICallParams,
 } from "@/services/api"
@@ -63,14 +63,16 @@ export function LiveCallPage() {
     },
   })
 
-  const sendTranscriptMutation = useMutation({
-    mutationFn: sendCallTranscript,
-    onSuccess: (response) => {
-      if (response.aiResponse) {
-        setCallTranscript((prev) => [...prev, `AI: ${response.aiResponse}`])
-      }
-    },
-  })
+  // Real-time transcript yuborish uchun (keyinroq ishlatiladi)
+  // Twilio call event'larida transcript olinganda ishlatiladi
+  // const sendTranscriptMutation = useMutation({
+  //   mutationFn: sendCallTranscript,
+  //   onSuccess: (response) => {
+  //     if (response.aiResponse) {
+  //       setCallTranscript((prev) => [...prev, `AI: ${response.aiResponse}`])
+  //     }
+  //   },
+  // })
 
   useEffect(() => {
     if (initialTo && !to) setTo(initialTo)
