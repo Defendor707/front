@@ -6,7 +6,7 @@ Bu qo'llanma backend developer uchun frontend bilan integratsiya qilish uchun as
 
 1. **Backend API Base URL sozlash:**
    - `.env.production` fayl yarating
-   - `VITE_API_BASE_URL=https://api.call-center.uzbek-talim.uz/api` qo'shing
+   - `VITE_API_BASE_URL=https://api.uzcall.uzbek-talim.uz/api` qo'shing
 
 2. **API funksiyalarini real backend'ga ulash:**
    - `src/services/api.ts` faylini oching

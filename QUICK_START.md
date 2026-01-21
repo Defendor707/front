@@ -9,15 +9,15 @@ npm run dev
 
 Brauzerda: `http://localhost:5173`
 
-## 2. Production Deployment (call-center.uzbek-talim.uz)
+## 2. Production Deployment (uzcall.uzbek-talim.uz)
 
 ### Variant A: Docker (Tavsiya etiladi)
 
 ```bash
 # 1. Environment variables
 cat > .env.production << EOF
-VITE_API_BASE_URL=https://api.call-center.uzbek-talim.uz/api
-VITE_WS_BASE_URL=wss://api.call-center.uzbek-talim.uz/api
+VITE_API_BASE_URL=https://api.uzcall.uzbek-talim.uz/api
+VITE_WS_BASE_URL=wss://api.uzcall.uzbek-talim.uz/api
 EOF
 
 # 2. Deploy
@@ -43,7 +43,7 @@ sudo systemctl reload nginx
 
 ## 4. Tekshirish
 
-- Health check: `curl http://call-center.uzbek-talim.uz/health`
+- Health check: `curl http://uzcall.uzbek-talim.uz/health` yoki `curl https://uzcall.uzbek-talim.uz/health`
 - Logs: `docker logs ai-call-center-frontend`
 
 ## Muammo?

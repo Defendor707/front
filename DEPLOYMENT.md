@@ -1,14 +1,14 @@
 # Production Deployment Qo'llanmasi
 
-Bu qo'llanma `https://call-center.uzbek-talim.uz` domain'ida frontend'ni ishga tushirish uchun.
+Bu qo'llanma `https://uzcall.uzbek-talim.uz` domain'ida frontend'ni ishga tushirish uchun.
 
 ## 1. Environment Variables
 
 `.env.production` fayl yarating:
 
 ```env
-VITE_API_BASE_URL=https://api.call-center.uzbek-talim.uz/api
-VITE_WS_BASE_URL=wss://api.call-center.uzbek-talim.uz/api
+VITE_API_BASE_URL=https://api.uzcall.uzbek-talim.uz/api
+VITE_WS_BASE_URL=wss://api.uzcall.uzbek-talim.uz/api
 ```
 
 ## 2. Docker orqali Deployment
@@ -18,8 +18,8 @@ VITE_WS_BASE_URL=wss://api.call-center.uzbek-talim.uz/api
 ```bash
 # Build image
 docker build \
-  --build-arg VITE_API_BASE_URL=https://api.call-center.uzbek-talim.uz/api \
-  --build-arg VITE_WS_BASE_URL=wss://api.call-center.uzbek-talim.uz/api \
+  --build-arg VITE_API_BASE_URL=https://api.uzcall.uzbek-talim.uz/api \
+  --build-arg VITE_WS_BASE_URL=wss://api.uzcall.uzbek-talim.uz/api \
   -t ai-call-center-frontend:latest .
 
 # Run container
@@ -35,8 +35,8 @@ docker run -d \
 ```bash
 # .env fayl yarating
 cat > .env << EOF
-VITE_API_BASE_URL=https://api.call-center.uzbek-talim.uz/api
-VITE_WS_BASE_URL=wss://api.call-center.uzbek-talim.uz/api
+VITE_API_BASE_URL=https://api.uzcall.uzbek-talim.uz/api
+VITE_WS_BASE_URL=wss://api.uzcall.uzbek-talim.uz/api
 EOF
 
 # Network yaratish (agar yo'q bo'lsa)
@@ -62,7 +62,7 @@ npm run build
 ```nginx
 server {
     listen 80;
-    server_name call-center.uzbek-talim.uz;
+    server_name uzcall.uzbek-talim.uz;
 
     root /var/www/call-center-frontend/dist;
     index index.html;
@@ -109,7 +109,7 @@ sudo systemctl reload nginx
 ## 4. SSL Certificate (Let's Encrypt)
 
 ```bash
-sudo certbot --nginx -d call-center.uzbek-talim.uz
+sudo certbot --nginx -d uzcall.uzbek-talim.uz
 ```
 
 ## 5. Systemd Service (Docker uchun)
@@ -147,7 +147,8 @@ sudo systemctl start call-center-frontend
 ### Health Check
 
 ```bash
-curl http://call-center.uzbek-talim.uz/health
+curl http://uzcall.uzbek-talim.uz/health
+curl https://uzcall.uzbek-talim.uz/health
 ```
 
 ### Logs

@@ -22,8 +22,8 @@ Agar real API mavjud bo'lmasa yoki xatolik bo'lsa:
 `.env.production` fayl yarating:
 
 ```env
-VITE_API_BASE_URL=https://api.call-center.uzbek-talim.uz/api
-VITE_WS_BASE_URL=wss://api.call-center.uzbek-talim.uz/api
+VITE_API_BASE_URL=https://api.uzcall.uzbek-talim.uz/api
+VITE_WS_BASE_URL=wss://api.uzcall.uzbek-talim.uz/api
 ```
 
 ### 2. Build va Deploy

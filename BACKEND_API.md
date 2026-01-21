@@ -4,7 +4,7 @@ Bu dokumentatsiya backend developer uchun frontend bilan integratsiya qilish uch
 
 ## Base URL
 
-Production: `https://api.call-center.uzbek-talim.uz/api`  
+Production: `https://api.uzcall.uzbek-talim.uz/api`  
 Development: `http://localhost:8000/api`
 
 Frontend environment variable orqali sozlanadi: `VITE_API_BASE_URL`
@@ -490,7 +490,7 @@ Real-time chat updates uchun WebSocket.
 
 **Connection:**
 ```javascript
-const ws = new WebSocket('wss://api.call-center.uzbek-talim.uz/api/ai/chat/chat_001/stream')
+const ws = new WebSocket('wss://api.uzcall.uzbek-talim.uz/api/ai/chat/chat_001/stream')
 ```
 
 **Messages:**
