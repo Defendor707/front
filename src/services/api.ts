@@ -1,8 +1,10 @@
 import { analytics, calls, chats, users } from "@/mock/data"
+import { API_BASE_URL } from "@/lib/apiConfig"
 import type {
   AnalyticsSnapshot,
   Call,
   Chat,
+  ChatMessage,
   ChatStatus,
   DashboardSummary,
   ID,
@@ -10,6 +12,27 @@ import type {
 } from "@/types/models"
 
 const latency = (ms = 300) => new Promise((r) => setTimeout(r, ms))
+
+// Backend API chaqiruvlari uchun helper
+async function apiRequest<T>(
+  endpoint: string,
+  options?: RequestInit,
+): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+    ...options,
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }))
+    throw new Error(error.message || `HTTP ${response.status}`)
+  }
+
+  return response.json()
+}
 
 function byNewest<T extends { updatedAt?: string; createdAt?: string; startedAt?: string }>(
   a: T,
@@ -151,5 +174,152 @@ export async function getAnalytics(
 ): Promise<AnalyticsSnapshot> {
   await latency()
   return { ...analytics, range }
+}
+
+// AI Chat API
+export type SendChatMessageParams = {
+  chatId?: string
+  userId: string
+  message: string
+  userContext?: {
+    name?: string
+    phone?: string
+    language?: string
+  }
+}
+
+export type ChatMessageResponse = {
+  messageId: string
+  chatId: string
+  response: string
+  contextUpdated?: boolean
+  suggestedActions?: string[]
+}
+
+export async function sendChatMessage(
+  params: SendChatMessageParams,
+): Promise<ChatMessageResponse> {
+  // Backend tayyor bo'lganda real API chaqiruvi:
+  // return apiRequest<ChatMessageResponse>("/ai/chat", {
+  //   method: "POST",
+  //   body: JSON.stringify(params),
+  // })
+
+  // Mock: foydalanuvchi ismini aniqlash va AI javobini generatsiya qilish
+  await latency(800)
+
+  const mockResponse: ChatMessageResponse = {
+    messageId: `msg_${Date.now()}`,
+    chatId: params.chatId || `chat_${Date.now()}`,
+    response: generateMockAIResponse(params),
+    contextUpdated: params.message.toLowerCase().includes("mening ismim") || params.message.toLowerCase().includes("men"),
+  }
+
+  return mockResponse
+}
+
+function generateMockAIResponse(params: SendChatMessageParams): string {
+  const msg = params.message.toLowerCase()
+
+  // Ismni aniqlash
+  if (msg.includes("mening ismim") || msg.includes("men")) {
+    const nameMatch = params.message.match(/(?:mening ismim|men)\s+(\w+)/i)
+    if (nameMatch) {
+      const name = nameMatch[1]
+      return `Tushunarli! Sizning ismingiz ${name}. Yaxshi, ${name}, sizga qanday yordam bera olaman?`
+    }
+  }
+
+  // Kontekstni eslash
+  const context = params.userContext
+  if (context?.name) {
+    if (msg.includes("salom") || msg.includes("assalomu alaykum")) {
+      return `Assalomu alaykum, ${context.name}! Yana siz bilan gaplashishdan xursandman. Nima bilan yordam beraman?`
+    }
+  }
+
+  // Umumiy javob
+  return `Tushunarli. Sizga qanday yordam bera olaman?`
+}
+
+// AI Call API (real-time voice conversation)
+export type StartAICallParams = {
+  userId: string
+  phoneNumber: string
+  direction: "inbound" | "outbound"
+  userContext?: {
+    name?: string
+    phone?: string
+    previousInteractions?: string[]
+  }
+}
+
+export type AICallResponse = {
+  callId: string
+  sessionId: string
+  aiGreeting?: string
+  contextLoaded: boolean
+}
+
+export async function startAICall(
+  params: StartAICallParams,
+): Promise<AICallResponse> {
+  // Backend tayyor bo'lganda:
+  // return apiRequest<AICallResponse>("/ai/call/start", {
+  //   method: "POST",
+  //   body: JSON.stringify(params),
+  // })
+
+  await latency(600)
+
+  const greeting = params.userContext?.name
+    ? `Assalomu alaykum, ${params.userContext.name}! Yana siz bilan gaplashishdan xursandman.`
+    : "Assalomu alaykum! AI yordamchi bilan gaplashyapsiz."
+
+  return {
+    callId: `call_${Date.now()}`,
+    sessionId: `session_${Date.now()}`,
+    aiGreeting: greeting,
+    contextLoaded: Boolean(params.userContext?.name),
+  }
+}
+
+export type SendCallTranscriptParams = {
+  callId: string
+  sessionId: string
+  transcript: string
+  audioChunk?: Blob
+}
+
+export type AICallTranscriptResponse = {
+  aiResponse?: string
+  suggestedActions?: string[]
+  shouldTransfer?: boolean
+  sentiment?: "positive" | "neutral" | "negative"
+}
+
+export async function sendCallTranscript(
+  params: SendCallTranscriptParams,
+): Promise<AICallTranscriptResponse> {
+  // Backend tayyor bo'lganda:
+  // const formData = new FormData()
+  // formData.append("transcript", params.transcript)
+  // if (params.audioChunk) formData.append("audio", params.audioChunk)
+  // return apiRequest<AICallTranscriptResponse>(`/ai/call/${params.callId}/transcript`, {
+  //   method: "POST",
+  //   body: formData,
+  // })
+
+  await latency(500)
+  return {
+    aiResponse: "Tushunarli. Davom etamizmi?",
+    sentiment: "neutral",
+  }
+}
+
+// WebSocket for real-time AI chat
+export function createAIChatWebSocket(chatId: string): WebSocket {
+  const ws = new WebSocket(`${API_BASE_URL.replace(/^http/, "ws")}/ai/chat/${chatId}/stream`)
+  return ws
 }
 

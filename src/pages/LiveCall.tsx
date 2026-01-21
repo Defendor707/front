@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query"
 import { Headphones, Mic, PhoneCall, PhoneIncoming, PhoneOff } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
@@ -10,7 +11,13 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { useAudioLevel } from "@/hooks/useAudioLevel"
 import { useTwilioVoice } from "@/hooks/useTwilioVoice"
+import {
+  sendCallTranscript,
+  startAICall,
+  type StartAICallParams,
+} from "@/services/api"
 import { useSettingsStore } from "@/stores/settingsStore"
+import { useUserContextStore } from "@/stores/userContextStore"
 
 function StatusBadge({ status }: { status: string }) {
   const variant =
@@ -36,11 +43,34 @@ export function LiveCallPage() {
 
   const [to, setTo] = useState(initialTo)
   const [hold, setHold] = useState(false)
+  const [aiCallSessionId, setAiCallSessionId] = useState<string | null>(null)
+  const [callTranscript, setCallTranscript] = useState<string[]>([])
 
+  const userContextStore = useUserContextStore()
   const voice = useTwilioVoice(twilioToken)
   const audio = useAudioLevel(
     voice.status === "calling" || voice.status === "in_call",
   )
+
+  const startAICallMutation = useMutation({
+    mutationFn: (params: StartAICallParams) => startAICall(params),
+    onSuccess: (response) => {
+      setAiCallSessionId(response.sessionId)
+      // AI greeting'ni transcript'ga qo'shish
+      if (response.aiGreeting) {
+        setCallTranscript([`AI: ${response.aiGreeting}`])
+      }
+    },
+  })
+
+  const sendTranscriptMutation = useMutation({
+    mutationFn: sendCallTranscript,
+    onSuccess: (response) => {
+      if (response.aiResponse) {
+        setCallTranscript((prev) => [...prev, `AI: ${response.aiResponse}`])
+      }
+    },
+  })
 
   useEffect(() => {
     if (initialTo && !to) setTo(initialTo)
@@ -51,6 +81,32 @@ export function LiveCallPage() {
     return Boolean(to.trim()) && (voice.status === "ready" || voice.status === "idle")
   }, [to, voice.status])
 
+  // AI conversation context yuklash va call boshlash
+  useEffect(() => {
+    if (voice.status === "in_call" && to && !aiCallSessionId) {
+      // Foydalanuvchi kontekstini topish (telefon bo'yicha)
+      const contexts = userContextStore.contexts
+      const userContext = Object.values(contexts).find((ctx) => ctx.phone === to)
+
+      startAICallMutation.mutate({
+        userId: userContext?.userId || `user_${to}`,
+        phoneNumber: to,
+        direction: "outbound",
+        userContext: {
+          name: userContext?.aiContext?.knownName,
+          phone: to,
+          previousInteractions: userContext?.aiContext?.conversationHistory,
+        },
+      })
+    }
+
+    if (voice.status === "idle" || voice.status === "ready") {
+      setAiCallSessionId(null)
+      setCallTranscript([])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice.status, to, aiCallSessionId])
+
   const suggestions = useMemo(() => {
     if (!aiAssistEnabled) return []
     if (voice.status === "incoming")
@@ -59,17 +115,28 @@ export function LiveCallPage() {
         "Shaxsni tasdiqlash uchun 2 ta savol bering (FIO, telefon).",
         "Muammo murakkab bo‘lsa, operatorga eskalatsiya qiling.",
       ]
-    if (voice.status === "in_call")
-      return [
+    if (voice.status === "in_call") {
+      const base = [
         "Javobni qisqa va aniq bering, keyin tasdiqlang: “To‘g‘rimi?”",
         "Agar link kerak bo‘lsa, SMS/Chat orqali yuborishni taklif qiling.",
         "Yakunida keyingi qadamni ayting va xayrlashing.",
       ]
+
+      // AI transcript'dan real-time suggestions
+      if (callTranscript.length > 0) {
+        const lastMessage = callTranscript[callTranscript.length - 1]
+        if (lastMessage.includes("ism")) {
+          base.unshift("Foydalanuvchi ismini so‘rang va kontekstga qo‘shing.")
+        }
+      }
+
+      return base
+    }
     return [
       "Qo‘ng‘iroqni boshlashdan oldin raqam formatini tekshiring (+998...).",
       "Mijozga qayta qo‘ng‘iroq vaqti haqida kelishib oling.",
     ]
-  }, [aiAssistEnabled, voice.status])
+  }, [aiAssistEnabled, voice.status, callTranscript])
 
   return (
     <div className="space-y-6">
@@ -275,14 +342,28 @@ export function LiveCallPage() {
               </div>
             ) : (
               <ul className="space-y-2">
-                {suggestions.map((s) => (
-                  <li key={s} className="rounded-lg border bg-muted/20 px-3 py-2">
+                {suggestions.map((s, i) => (
+                  <li key={i} className="rounded-lg border bg-muted/20 px-3 py-2">
                     {s}
                   </li>
                 ))}
               </ul>
             )}
             <Separator className="my-3" />
+            {voice.status === "in_call" && callTranscript.length > 0 ? (
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-muted-foreground">
+                  Conversation context:
+                </div>
+                <div className="max-h-32 space-y-1 overflow-y-auto rounded border bg-muted/10 p-2 text-xs">
+                  {callTranscript.slice(-5).map((msg, i) => (
+                    <div key={i} className="text-muted-foreground">
+                      {msg}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className="text-xs text-muted-foreground">
               Tip: For incoming calls, register the device first.
             </div>

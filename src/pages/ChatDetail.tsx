@@ -1,18 +1,25 @@
-import { useQuery } from "@tanstack/react-query"
-import { Copy, PhoneCall } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Copy, PhoneCall, Send } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatDateTime, timeAgo } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import { getChatById, getUserById } from "@/services/api"
+import {
+  getChatById,
+  getUserById,
+  sendChatMessage,
+  type SendChatMessageParams,
+} from "@/services/api"
 import { queryKeys } from "@/services/queryKeys"
+import { useUserContextStore } from "@/stores/userContextStore"
 import type { ChatMessage, Sentiment } from "@/types/models"
 
 function sentimentClass(sentiment: Sentiment) {
@@ -45,11 +52,20 @@ export function ChatDetailPage() {
   const chatId = params.chatId ?? ""
 
   const [copied, setCopied] = useState(false)
+  const [messageInput, setMessageInput] = useState("")
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const queryClient = useQueryClient()
+  const userContextStore = useUserContextStore()
 
   const chatQuery = useQuery({
     queryKey: queryKeys.chat(chatId),
     queryFn: () => getChatById(chatId),
     enabled: Boolean(chatId),
+    refetchInterval: (query) => {
+      // Real-time chat uchun polling (backend WebSocket bo'lsa uni ishlatamiz)
+      return false
+    },
   })
 
   const userId = chatQuery.data?.userId
@@ -58,6 +74,71 @@ export function ChatDetailPage() {
     queryFn: () => (userId ? getUserById(userId) : Promise.resolve(null)),
     enabled: Boolean(userId),
   })
+
+  const sendMessageMutation = useMutation({
+    mutationFn: (params: SendChatMessageParams) => sendChatMessage(params),
+    onSuccess: async (response) => {
+      // AI javobini chat'ga qo'shish
+      const chat = chatQuery.data
+      if (chat) {
+        const newMessages: ChatMessage[] = [
+          ...chat.messages,
+          {
+            id: `msg_${Date.now()}`,
+            role: "user",
+            text: messageInput,
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: response.messageId,
+            role: "ai",
+            text: response.response,
+            timestamp: new Date().toISOString(),
+          },
+        ]
+
+        // Context yangilangan bo'lsa, saqlaymiz
+        if (response.contextUpdated && userId) {
+          const nameMatch = messageInput.match(/(?:mening ismim|men)\s+(\w+)/i)
+          if (nameMatch) {
+            userContextStore.updateAIContext(userId, {
+              knownName: nameMatch[1],
+            })
+          }
+        }
+
+        // Chat'ni yangilaymiz (backend'da real bo'lsa, optimistic update)
+        queryClient.setQueryData(queryKeys.chat(chatId), {
+          ...chat,
+          messages: newMessages,
+          updatedAt: new Date().toISOString(),
+        })
+
+        setMessageInput("")
+      }
+    },
+  })
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [chatQuery.data?.messages.length])
+
+  function handleSendMessage() {
+    if (!messageInput.trim() || !userId) return
+
+    const userContext = userContextStore.getContext(userId)
+    sendMessageMutation.mutate({
+      chatId: chatId || undefined,
+      userId,
+      message: messageInput,
+      userContext: {
+        name: userContext?.aiContext?.knownName || userQuery.data?.fullName,
+        phone: userQuery.data?.phone,
+        language: userQuery.data?.language,
+      },
+    })
+  }
 
   const headerBadges = useMemo(() => {
     const c = chatQuery.data
@@ -187,46 +268,94 @@ export function ChatDetailPage() {
                 <Skeleton className="h-12 w-1/2" />
               </div>
             ) : chat ? (
-              <ScrollArea className="h-[460px] pr-4">
-                <div className="space-y-3">
-                  {chat.messages.map((m) => (
-                    <div key={m.id} className={cn("flex", messageAlign(m.role))}>
-                      <div
-                        className={cn(
-                          "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm",
-                          m.role === "ai" ? "rounded-tr-sm" : "rounded-tl-sm",
-                          m.role === "system" && "max-w-[92%] rounded-xl",
-                          messageBubbleClass(m.role),
-                        )}
-                      >
-                        {m.role === "system" ? (
-                          <div className="text-center text-xs font-medium">
-                            {m.text}
-                          </div>
-                        ) : (
-                          <div className="whitespace-pre-wrap leading-relaxed">
-                            {m.text}
-                          </div>
-                        )}
+              <>
+                <ScrollArea className="h-[460px] pr-4">
+                  <div className="space-y-3">
+                    {chat.messages.map((m) => (
+                      <div key={m.id} className={cn("flex", messageAlign(m.role))}>
                         <div
                           className={cn(
-                            "mt-1 text-[11px] opacity-80",
-                            m.role === "ai"
-                              ? "text-primary-foreground/80"
-                              : "text-muted-foreground",
-                            m.role === "system" && "text-center",
+                            "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm",
+                            m.role === "ai" ? "rounded-tr-sm" : "rounded-tl-sm",
+                            m.role === "system" && "max-w-[92%] rounded-xl",
+                            messageBubbleClass(m.role),
                           )}
                         >
-                          {new Date(m.timestamp).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {m.role === "system" ? (
+                            <div className="text-center text-xs font-medium">
+                              {m.text}
+                            </div>
+                          ) : (
+                            <div className="whitespace-pre-wrap leading-relaxed">
+                              {m.text}
+                            </div>
+                          )}
+                          <div
+                            className={cn(
+                              "mt-1 text-[11px] opacity-80",
+                              m.role === "ai"
+                                ? "text-primary-foreground/80"
+                                : "text-muted-foreground",
+                              m.role === "system" && "text-center",
+                            )}
+                          >
+                            {new Date(m.timestamp).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                    {sendMessageMutation.isPending && (
+                      <div className={cn("flex", messageAlign("ai"))}>
+                        <div
+                          className={cn(
+                            "max-w-[85%] rounded-2xl rounded-tr-sm px-3 py-2 text-sm shadow-sm",
+                            messageBubbleClass("ai"),
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 animate-bounce rounded-full bg-primary-foreground/60 [animation-delay:-0.3s]" />
+                            <div className="h-2 w-2 animate-bounce rounded-full bg-primary-foreground/60 [animation-delay:-0.15s]" />
+                            <div className="h-2 w-2 animate-bounce rounded-full bg-primary-foreground/60" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+
+                <Separator className="my-4" />
+
+                <div className="flex gap-2">
+                  <Input
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSendMessage()
+                      }
+                    }}
+                    placeholder="Xabar yozing... (Enter - yuborish)"
+                    disabled={sendMessageMutation.isPending || !userId}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleSendMessage}
+                    disabled={
+                      !messageInput.trim() ||
+                      sendMessageMutation.isPending ||
+                      !userId
+                    }
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
                 </div>
-              </ScrollArea>
+              </>
             ) : (
               <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
                 Chat not found.
