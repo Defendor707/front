@@ -47,11 +47,36 @@ VITE_WS_BASE_URL=ws://localhost:8000/api
 
 ### AI Integration
 
-The frontend is ready for backend API integration. Update `src/services/api.ts` to connect to your backend:
+Frontend AI integratsiyasi tayyor. Backend API'ga ulash uchun `src/services/api.ts` faylini yangilang.
 
-- Chat messages: `POST /api/ai/chat`
-- Call transcripts: `POST /api/ai/call/{callId}/transcript`
-- User context: Stored locally, can sync with backend
+#### User Context (Foydalanuvchi ma'lumotlarini eslab qolish)
+
+AI foydalanuvchi ismini va boshqa ma'lumotlarni eslab qoladi:
+
+1. **Chat orqali**: Foydalanuvchi "Mening ismim Moychechak" deb yozsa, AI buni eslab qoladi
+2. **Keyingi chat**: "Salom" deb yozganda, AI "Assalomu alaykum, Moychechak!" deb javob beradi
+3. **Context saqlash**: `src/stores/userContextStore.ts` orqali localStorage'da saqlanadi
+
+**Backend API endpoint'lar** (backend tayyor bo'lganda):
+
+- `POST /api/ai/chat` - Chat message yuborish va AI javobini olish
+  ```json
+  {
+    "userId": "u_1001",
+    "message": "Mening ismim Moychechak",
+    "userContext": {
+      "name": "Moychechak",
+      "phone": "+998901112233",
+      "language": "uz"
+    }
+  }
+  ```
+
+- `POST /api/ai/call/{callId}/transcript` - Call transcript yuborish
+- `POST /api/ai/call/start` - AI call boshlash
+- `GET /api/users/{userId}/context` - Foydalanuvchi kontekstini olish
+
+**Mock mode**: Hozircha mock data ishlatilmoqda. Backend tayyor bo'lganda, `src/services/api.ts` faylida comment qilingan `apiRequest` funksiyasini ishlatib, real API'ga ulash mumkin.
 
 ### Twilio Setup
 
