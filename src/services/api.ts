@@ -198,13 +198,18 @@ export type ChatMessageResponse = {
 export async function sendChatMessage(
   params: SendChatMessageParams,
 ): Promise<ChatMessageResponse> {
-  // Backend tayyor bo'lganda real API chaqiruvi:
-  // return apiRequest<ChatMessageResponse>("/ai/chat", {
-  //   method: "POST",
-  //   body: JSON.stringify(params),
-  // })
+  // Backend tayyor bo'lganda quyidagi kodni ishlatish:
+  // try {
+  //   return await apiRequest<ChatMessageResponse>("/ai/chat", {
+  //     method: "POST",
+  //     body: JSON.stringify(params),
+  //   })
+  // } catch (error) {
+  //   console.error("AI chat error:", error)
+  //   throw error
+  // }
 
-  // Mock: foydalanuvchi ismini aniqlash va AI javobini generatsiya qilish
+  // Mock mode (backend tayyor bo'lguncha)
   await latency(800)
 
   const mockResponse: ChatMessageResponse = {
@@ -263,12 +268,18 @@ export type AICallResponse = {
 export async function startAICall(
   params: StartAICallParams,
 ): Promise<AICallResponse> {
-  // Backend tayyor bo'lganda:
-  // return apiRequest<AICallResponse>("/ai/call/start", {
-  //   method: "POST",
-  //   body: JSON.stringify(params),
-  // })
+  // Backend tayyor bo'lganda quyidagi kodni ishlatish:
+  // try {
+  //   return await apiRequest<AICallResponse>("/ai/call/start", {
+  //     method: "POST",
+  //     body: JSON.stringify(params),
+  //   })
+  // } catch (error) {
+  //   console.error("Start AI call error:", error)
+  //   throw error
+  // }
 
+  // Mock mode
   await latency(600)
 
   const greeting = params.userContext?.name

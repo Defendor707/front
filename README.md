@@ -106,6 +106,38 @@ npm run build    # Production build
 npm run lint     # Run ESLint
 ```
 
+## Production Deployment
+
+### Tezkor Deployment (Docker)
+
+```bash
+# 1. Environment variables sozlash
+cp .env.production.example .env.production
+# .env.production faylini tahrirlang
+
+# 2. Deploy script ishga tushirish
+./deploy.sh production
+```
+
+### Batafsil Qo'llanma
+
+- **Deployment:** `DEPLOYMENT.md` - To'liq deployment qo'llanmasi
+- **Backend API:** `BACKEND_API.md` - Backend developer uchun to'liq API dokumentatsiya
+- **Qisqa Qo'llanma:** `API_INTEGRATION_GUIDE.md` - Tezkor integratsiya uchun
+
+### Docker Compose
+
+```bash
+docker-compose up -d
+```
+
+### Manual Deployment
+
+```bash
+npm run build
+# dist/ papkasini web server'ga yuklang
+```
+
 ---
 
 ## React + TypeScript + Vite
