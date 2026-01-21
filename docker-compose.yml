@@ -14,6 +14,9 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+    volumes:
+      # Let's Encrypt webroot (host path)
+      - /var/www/certbot:/usr/share/nginx/html/.well-known/acme-challenge:ro
     networks:
       - call-center-network
     healthcheck:
@@ -22,6 +25,9 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
+
+volumes:
+  certbot-webroot:
 
 networks:
   call-center-network:
