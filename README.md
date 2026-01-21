@@ -96,6 +96,7 @@ src/
 ├── hooks/          # Custom hooks (Twilio, audio level)
 ├── lib/            # Utilities
 └── types/          # TypeScript types
+docs/               # Qo'shimcha qo'llanmalar
 ```
 
 ## Development
@@ -105,6 +106,24 @@ npm run dev      # Start dev server
 npm run build    # Production build
 npm run lint     # Run ESLint
 ```
+
+## Production Deployment
+
+```bash
+# Tezkor deploy
+./deploy.sh production
+
+# Yoki Docker Compose
+docker-compose up -d
+```
+
+**Domain:** `uzcall.uzbek-talim.uz`
+
+**Qo'shimcha qo'llanmalar:** [docs/](docs/) papkasida
+
+- `docs/DEPLOYMENT.md` - To'liq deployment qo'llanmasi
+- `docs/BACKEND_API.md` - Backend API dokumentatsiya
+- `docs/DNS_SETUP.md` - DNS sozlash
 
 ## Production Deployment
 
