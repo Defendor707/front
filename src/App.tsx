@@ -1,17 +1,32 @@
+import { lazy, Suspense } from "react"
 import { Route, Routes } from "react-router-dom"
 
 import { MainLayout } from "@/components/layout/MainLayout"
-import { AnalyticsPage } from "@/pages/Analytics"
-import { CallDetailPage } from "@/pages/CallDetail"
-import { CallsPage } from "@/pages/Calls"
-import { ChatDetailPage } from "@/pages/ChatDetail"
-import { ChatsPage } from "@/pages/Chats"
-import { DashboardPage } from "@/pages/Dashboard"
-import { LiveCallPage } from "@/pages/LiveCall"
 import { LoginPage } from "@/pages/Login"
-import { NotFoundPage } from "@/pages/NotFound"
-import { SettingsPage } from "@/pages/Settings"
 import { RequireAuth } from "@/routes/RequireAuth"
+
+// Lazy load pages for better performance
+const DashboardPage = lazy(() => import("@/pages/Dashboard").then(m => ({ default: m.DashboardPage })))
+const ChatsPage = lazy(() => import("@/pages/Chats").then(m => ({ default: m.ChatsPage })))
+const ChatDetailPage = lazy(() => import("@/pages/ChatDetail").then(m => ({ default: m.ChatDetailPage })))
+const CallsPage = lazy(() => import("@/pages/Calls").then(m => ({ default: m.CallsPage })))
+const CallDetailPage = lazy(() => import("@/pages/CallDetail").then(m => ({ default: m.CallDetailPage })))
+const LiveCallPage = lazy(() => import("@/pages/LiveCall").then(m => ({ default: m.LiveCallPage })))
+const AnalyticsPage = lazy(() => import("@/pages/Analytics").then(m => ({ default: m.AnalyticsPage })))
+const SettingsPage = lazy(() => import("@/pages/Settings").then(m => ({ default: m.SettingsPage })))
+const NotFoundPage = lazy(() => import("@/pages/NotFound").then(m => ({ default: m.NotFoundPage })))
+
+// Loading component
+function PageLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+        <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  )
+}
 
 export default function App() {
   return (
@@ -20,15 +35,78 @@ export default function App() {
 
       <Route element={<RequireAuth />}>
         <Route element={<MainLayout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="chats" element={<ChatsPage />} />
-          <Route path="chats/:chatId" element={<ChatDetailPage />} />
-          <Route path="calls" element={<CallsPage />} />
-          <Route path="calls/:callId" element={<CallDetailPage />} />
-          <Route path="call" element={<LiveCallPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="*" element={<NotFoundPage />} />
+          <Route
+            index
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <DashboardPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="chats"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <ChatsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="chats/:chatId"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <ChatDetailPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="calls"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <CallsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="calls/:callId"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <CallDetailPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="call"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <LiveCallPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="analytics"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <AnalyticsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <SettingsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <NotFoundPage />
+              </Suspense>
+            }
+          />
         </Route>
       </Route>
     </Routes>

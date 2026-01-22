@@ -16,7 +16,7 @@ services:
       - "80:80"
     volumes:
       # Let's Encrypt webroot (host path)
-      - /var/www/certbot:/usr/share/nginx/html/.well-known/acme-challenge:ro
+      - /var/www/certbot:/var/www/certbot:ro
     networks:
       - call-center-network
     healthcheck:

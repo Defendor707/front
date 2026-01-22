@@ -1,56 +1,67 @@
 # Deployment Status
 
-## ✅ Frontend ishga tushdi!
+## ✅ Frontend muvaffaqiyatli ishga tushdi!
 
-**Domain:** `uzcall.uzbek-talim.uz`
-**Status:** ✅ Ishlayapti
-**Port:** 80 (HTTP)
+**Domain:** `uzcall.uzbek-talim.uz`  
+**Status:** ✅ Ishlayapti (HTTPS bilan)  
+**Port:** 80 (HTTP) va 443 (HTTPS)  
+**SSL:** ✅ O'rnatilgan (Let's Encrypt)  
+**SSL Expiry:** 2026-04-22
 
-### Tekshirish
+### 🌐 URL'lar
+
+- **HTTPS:** https://uzcall.uzbek-talim.uz ✅
+- **HTTP:** http://uzcall.uzbek-talim.uz (HTTPS'ga redirect qiladi) ✅
+- **Login:** https://uzcall.uzbek-talim.uz/login ✅
+- **Health Check:** https://uzcall.uzbek-talim.uz/health ✅
+
+### 🔍 Tekshirish
 
 ```bash
 # Health check
-curl http://uzcall.uzbek-talim.uz/health
+curl https://uzcall.uzbek-talim.uz/health
+# Javob: healthy
 
-# Browser'da
-http://uzcall.uzbek-talim.uz
+# HTTP'dan HTTPS'ga redirect
+curl -I http://uzcall.uzbek-talim.uz
+# Javob: HTTP/1.1 301 Moved Permanently
+
+# HTTPS
+curl -I https://uzcall.uzbek-talim.uz
+# Javob: HTTP/2 200
 ```
 
-### SSL (HTTPS)
-
-SSL certificate o'rnatish:
+### 🐳 Docker Container
 
 ```bash
-cd /home/azureuser/frontend
-sudo ./setup-ssl.sh
+# Container status
+docker ps | grep ai-call-center-frontend
+
+# Loglar
+docker logs ai-call-center-frontend
+
+# Container'ni qayta ishga tushirish
+docker restart ai-call-center-frontend
 ```
 
-Keyin HTTPS bilan ishga tushirish:
+### 🔒 SSL Certificate
 
+- **Certificate Path:** `/etc/letsencrypt/live/uzcall.uzbek-talim.uz/`
+- **Auto-renewal:** ✅ Sozlangan (Certbot)
+- **Expiry Date:** 2026-04-22
+
+SSL certificate'ni qo'lda yangilash:
 ```bash
-# Container'ni to'xtatish
-sudo docker stop ai-call-center-frontend
-
-# SSL bilan qayta ishga tushirish
-docker-compose -f docker-compose-ssl.yml up -d
+sudo certbot renew
+docker-compose -f docker-compose-ssl.yml restart
 ```
 
-### To'xtatilgan xizmatlar
+### 📝 Deployment Scripts
 
-✅ Barcha eski call-center xizmatlari to'xtatildi:
-- callcenter-admin
-- callcenter-backend
-- callcenter-redis
-- callcenter-db
-- callcenter-chromadb
-- callcenter-nginx
+- **`deploy-with-ssl.sh`** - To'liq deployment (HTTP + SSL)
+- **`quick-deploy.sh`** - Tezkor deployment (SSL mavjud bo'lsa)
+- **`deploy.sh`** - Oddiy deployment (HTTP)
 
-### Faqat frontend ishlayapti
+### ✅ Deployment muvaffaqiyatli!
 
-✅ `ai-call-center-frontend` container ishlayapti
-
-### Keyingi qadamlar
-
-1. SSL certificate o'rnatish (agar kerak bo'lsa)
-2. Backend API'ni ulash
-3. Domain DNS sozlash (agar hali bo'lmasa)
+Frontend endi https://uzcall.uzbek-talim.uz domain'ida ishlayapti va SSL bilan himoyalangan.

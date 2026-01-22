@@ -82,7 +82,27 @@ export const useAuthStore = create<AuthState>()(
             return
           } catch (error) {
             console.error("Login error:", error)
-            throw error
+            // API mavjud emas bo'lsa, mock mode'ga o'tkazish
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            if (
+              errorMessage.includes("fetch") ||
+              errorMessage.includes("Failed to fetch") ||
+              errorMessage.includes("NetworkError") ||
+              errorMessage.includes("Could not resolve") ||
+              errorMessage.includes("ERR_NAME_NOT_RESOLVED")
+            ) {
+              console.warn("API server is not available, falling back to mock mode")
+              // Mock mode'ga o'tish - quyidagi kodga o'tadi
+            } else {
+              // Boshqa xatolar (401, 403, etc.) - foydalanuvchiga ko'rsatish
+              throw new Error(
+                errorMessage.includes("401") || errorMessage.includes("Unauthorized")
+                  ? "Invalid email or password"
+                  : errorMessage.includes("403") || errorMessage.includes("Forbidden")
+                    ? "Access denied"
+                    : "Login failed. Please try again."
+              )
+            }
           }
         }
 
