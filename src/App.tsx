@@ -1,8 +1,7 @@
 import { lazy, Suspense } from "react"
-import { Route, Routes } from "react-router-dom"
+import { Navigate, Route, Routes } from "react-router-dom"
 
 import { MainLayout } from "@/components/layout/MainLayout"
-import { LoginPage } from "@/pages/Login"
 import { RequireAuth } from "@/routes/RequireAuth"
 
 // Lazy load pages for better performance
@@ -13,6 +12,7 @@ const CallsPage = lazy(() => import("@/pages/Calls").then(m => ({ default: m.Cal
 const CallDetailPage = lazy(() => import("@/pages/CallDetail").then(m => ({ default: m.CallDetailPage })))
 const LiveCallPage = lazy(() => import("@/pages/LiveCall").then(m => ({ default: m.LiveCallPage })))
 const AnalyticsPage = lazy(() => import("@/pages/Analytics").then(m => ({ default: m.AnalyticsPage })))
+const KnowledgePage = lazy(() => import("@/pages/Knowledge").then(m => ({ default: m.KnowledgePage })))
 const SettingsPage = lazy(() => import("@/pages/Settings").then(m => ({ default: m.SettingsPage })))
 const NotFoundPage = lazy(() => import("@/pages/NotFound").then(m => ({ default: m.NotFoundPage })))
 
@@ -31,8 +31,9 @@ function PageLoader() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-
+      {/* Login route olib tashlandi - avtomatik login qilinadi */}
+      <Route path="/login" element={<Navigate to="/" replace />} />
+      
       <Route element={<RequireAuth />}>
         <Route element={<MainLayout />}>
           <Route
@@ -88,6 +89,14 @@ export default function App() {
             element={
               <Suspense fallback={<PageLoader />}>
                 <AnalyticsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="knowledge"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <KnowledgePage />
               </Suspense>
             }
           />

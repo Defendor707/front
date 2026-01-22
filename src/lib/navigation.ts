@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Database,
   Headphones,
   LayoutDashboard,
   MessageSquare,
@@ -21,6 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "Calls", href: "/calls", icon: PhoneCall },
   { title: "Live Call", href: "/call", icon: Headphones },
   { title: "Analytics", href: "/analytics", icon: BarChart3 },
+  { title: "Ma'lumotlar", href: "/knowledge", icon: Database },
   { title: "Settings", href: "/settings", icon: Settings },
 ]
 

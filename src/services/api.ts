@@ -1,5 +1,6 @@
 import { analytics, calls, chats, users } from "@/mock/data"
 import { API_BASE_URL, USE_REAL_API, FORCE_REAL_API } from "@/lib/apiConfig"
+import { getAllCalls as getVoIPCalls, getStatistics as getVoIPStatistics } from "@/services/voipApi"
 import type {
   AnalyticsSnapshot,
   Call,
@@ -80,7 +81,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       return await apiRequest<DashboardSummary>("/dashboard/summary")
     } catch (error) {
       console.error("Failed to fetch dashboard from API, falling back to mock:", error)
-      // Fallback to mock if API fails
+      // Fallback to mock if API fails - quyidagi kodga o'tadi
     }
   }
 
@@ -181,20 +182,35 @@ export type ListCallsParams = {
 }
 
 export async function listCalls(params: ListCallsParams = {}) {
-  // Real API'ga ulanadi
+  // Real API'ga ulanadi (integ.md API)
   if (isRealAPIEnabled) {
     try {
-      const queryParams = new URLSearchParams()
-      if (params.query) queryParams.append("query", params.query)
-      if (params.status && params.status !== "all") queryParams.append("status", params.status)
-      queryParams.append("page", String(params.page || 1))
-      queryParams.append("pageSize", String(params.pageSize || 20))
+      // VoIP API'dan qo'ng'iroqlarni olish
+      const voipCalls = await getVoIPCalls({
+        number: params.query,
+        status: params.status !== "all" ? params.status as "processing" | "completed" : undefined,
+      })
       
-      return await apiRequest<{ page: number; pageSize: number; total: number; items: Call[] }>(
-        `/calls?${queryParams.toString()}`
-      )
+      // VoIP API format'ini frontend format'iga o'tkazish
+      const convertedCalls: Call[] = voipCalls.map((vc, idx) => ({
+        id: `call_${idx}_${vc.number}`,
+        userId: `u_${vc.number.replace(/\D/g, "")}`,
+        direction: "inbound" as const,
+        status: vc.status === "completed" ? "completed" : "missed",
+        startedAt: vc.createdAt,
+        endedAt: vc.status === "completed" ? new Date(new Date(vc.createdAt).getTime() + vc.duration * 1000).toISOString() : undefined,
+        durationSec: vc.duration,
+        sentiment: "neutral" as const,
+        aiSummary: vc.summary,
+        tags: vc.topic ? [vc.topic] : [],
+        transcript: vc.chatHistory,
+      }))
+      
+      // Pagination qo'llash
+      const { page = 1, pageSize = 20 } = params
+      return paginate(convertedCalls, page, pageSize)
     } catch (error) {
-      console.error("Failed to fetch calls from API, falling back to mock:", error)
+      console.error("Failed to fetch calls from VoIP API, falling back to mock:", error)
     }
   }
 
@@ -272,12 +288,45 @@ export async function listUsers(): Promise<User[]> {
 export async function getAnalytics(
   range: AnalyticsSnapshot["range"] = "7d",
 ): Promise<AnalyticsSnapshot> {
-  // Real API'ga ulanadi
+  // Real API'ga ulanadi (integ.md Statistics API)
   if (isRealAPIEnabled) {
     try {
-      return await apiRequest<AnalyticsSnapshot>(`/analytics?range=${range}`)
+      // Range'ni days'ga o'tkazish
+      const daysMap: Record<string, number> = {
+        "7d": 7,
+        "30d": 30,
+        "90d": 90,
+        "1y": 365,
+      }
+      const days = daysMap[range] || 30
+      
+      const stats = await getVoIPStatistics({ days, months: 12 })
+      
+      // Statistics format'ini AnalyticsSnapshot format'iga o'tkazish
+      const converted: AnalyticsSnapshot = {
+        range,
+        callsTotal: stats.totalCalls,
+        callsAnswered: stats.totalCalls, // API'da faqat total bor
+        callsMissed: 0, // API'da yo'q
+        chatsTotal: 0, // API'da yo'q
+        chatsResolved: 0, // API'da yo'q
+        avgResponseSec: 0, // API'da yo'q
+        avgHandleTimeSec: stats.averageDuration,
+        aiSuccessRate: 0.85, // Default value
+        topTopics: stats.topicsFrequency.map((tf) => ({
+          topic: tf.topic,
+          count: tf.count,
+        })),
+        callsSeries: stats.dailyCalls.map((dc) => ({
+          t: `${dc.date}T00:00:00Z`,
+          value: dc.count,
+        })),
+        chatsSeries: [], // API'da yo'q
+      }
+      
+      return converted
     } catch (error) {
-      console.error("Failed to fetch analytics from API, falling back to mock:", error)
+      console.error("Failed to fetch statistics from VoIP API, falling back to mock:", error)
     }
   }
 

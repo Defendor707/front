@@ -33,7 +33,7 @@ VITE_WS_BASE_URL=wss://api.uzcall.uzbek-talim.uz/api
 npm run build
 
 # Yoki Docker orqali
-./deploy.sh production
+./scripts/deploy.sh production
 ```
 
 ### 3. Tekshirish

@@ -49,8 +49,9 @@ async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: null,
-      isAuthenticated: false,
+      // Avtomatik demo user bilan initialized (login panel olib tashlangan)
+      user: DEMO_USER,
+      isAuthenticated: true,
 
       async login({ email, password, remember }) {
         if (!email || !password) {
@@ -144,6 +145,13 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      // Hydration'da agar user bo'lmasa, avtomatik demo user qo'shish
+      onRehydrateStorage: () => (state) => {
+        if (!state || !state.user || !state.isAuthenticated) {
+          return { user: DEMO_USER, isAuthenticated: true }
+        }
+        return state
+      },
     },
   ),
 )

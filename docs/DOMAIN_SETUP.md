@@ -14,7 +14,7 @@ VITE_WS_BASE_URL=wss://api.uzcall.uzbek-talim.uz/api
 EOF
 
 # 2. Deploy
-./deploy.sh production
+./scripts/deploy.sh production
 ```
 
 ## DNS Sozlash
@@ -44,7 +44,7 @@ DNS sozlanganidan keyin:
 sudo certbot --nginx -d uzcall.uzbek-talim.uz
 ```
 
-Yoki Docker ishlatilsa, `nginx-ssl.conf` faylini ishlatish.
+Yoki Docker ishlatilsa, `config/nginx-ssl.conf` faylini ishlatish.
 
 ## Tekshirish
 
@@ -61,4 +61,4 @@ curl http://uzcall.uzbek-talim.uz/health
 
 - `DNS_SETUP.md` - DNS sozlash qo'llanmasi
 - `DEPLOYMENT.md` - To'liq deployment qo'llanmasi
-- `nginx-ssl.conf` - SSL config (HTTPS uchun)
+- `config/nginx-ssl.conf` - SSL config (HTTPS uchun)

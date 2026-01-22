@@ -1,7 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { LogOut, Save, Trash2 } from "lucide-react"
+import { LogOut, Save, Trash2, Plus, Edit, X } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
 
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +17,16 @@ import { cn } from "@/lib/utils"
 import { USE_REAL_API, FORCE_REAL_API } from "@/lib/apiConfig"
 import { useAuthStore } from "@/stores/authStore"
 import { useSettingsStore } from "@/stores/settingsStore"
+import {
+  getAllQAs,
+  createQA,
+  updateQA,
+  deleteQA,
+  getAllTopics,
+  createTopic,
+  deleteTopic,
+} from "@/services/voipApi"
+import type { QA } from "@/services/voipApi"
 
 const schema = z.object({
   theme: z.enum(["system", "light", "dark"]),
@@ -29,6 +40,7 @@ type FormValues = z.infer<typeof schema>
 export function SettingsPage() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
+  const queryClient = useQueryClient()
 
   const theme = useSettingsStore((s) => s.theme)
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled)
@@ -42,6 +54,65 @@ export function SettingsPage() {
   const clearTwilioToken = useSettingsStore((s) => s.clearTwilioToken)
 
   const [saved, setSaved] = useState(false)
+  const [editingQA, setEditingQA] = useState<QA | null>(null)
+  const [newQATitle, setNewQATitle] = useState("")
+  const [newQAAnswer, setNewQAAnswer] = useState("")
+  const [newTopicName, setNewTopicName] = useState("")
+
+  // QA va Topic queries
+  const qasQuery = useQuery({
+    queryKey: ["qas"],
+    queryFn: () => getAllQAs(),
+    enabled: USE_REAL_API || FORCE_REAL_API,
+  })
+
+  const topicsQuery = useQuery({
+    queryKey: ["topics"],
+    queryFn: getAllTopics,
+    enabled: USE_REAL_API || FORCE_REAL_API,
+  })
+
+  // QA mutations
+  const createQAMutation = useMutation({
+    mutationFn: () => createQA(newQATitle, newQAAnswer),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["qas"] })
+      setNewQATitle("")
+      setNewQAAnswer("")
+    },
+  })
+
+  const updateQAMutation = useMutation({
+    mutationFn: (data: { id: number; title?: string; answer?: string }) =>
+      updateQA(data.id, { title: data.title, answer: data.answer }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["qas"] })
+      setEditingQA(null)
+    },
+  })
+
+  const deleteQAMutation = useMutation({
+    mutationFn: deleteQA,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["qas"] })
+    },
+  })
+
+  // Topic mutations
+  const createTopicMutation = useMutation({
+    mutationFn: createTopic,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["topics"] })
+      setNewTopicName("")
+    },
+  })
+
+  const deleteTopicMutation = useMutation({
+    mutationFn: deleteTopic,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["topics"] })
+    },
+  })
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -96,7 +167,7 @@ export function SettingsPage() {
         <div>
           <h2 className="text-lg font-semibold">Settings</h2>
           <p className="text-sm text-muted-foreground">
-            Profile, notifications, Twilio, and AI configuration.
+            Profile, notifications, Twilio, QA, Topics, and AI configuration.
           </p>
         </div>
         {!(USE_REAL_API || FORCE_REAL_API) && (
@@ -237,12 +308,207 @@ export function SettingsPage() {
                 }
               />
               <div className="text-xs text-muted-foreground">
-                Security note: don’t store long-lived tokens in the browser. In
+                Security note: don't store long-lived tokens in the browser. In
                 production, fetch short-lived tokens from backend.
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* QA Management */}
+        {(USE_REAL_API || FORCE_REAL_API) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Q&A Management</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Add New Q&A</Label>
+                <div className="grid gap-2">
+                  <Input
+                    placeholder="Question title..."
+                    value={newQATitle}
+                    onChange={(e) => setNewQATitle(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Answer..."
+                    value={newQAAnswer}
+                    onChange={(e) => setNewQAAnswer(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      if (newQATitle && newQAAnswer) {
+                        createQAMutation.mutate()
+                      }
+                    }}
+                    disabled={!newQATitle || !newQAAnswer || createQAMutation.isPending}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Q&A
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>Existing Q&As</Label>
+                {qasQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading...</div>
+                ) : (qasQuery.data || []).length > 0 ? (
+                  <div className="space-y-2">
+                    {(qasQuery.data || []).map((qa: QA) => (
+                      <div
+                        key={qa.id}
+                        className="flex items-start justify-between rounded-lg border p-3"
+                      >
+                        {editingQA?.id === qa.id && editingQA ? (
+                          <div className="flex-1 space-y-2">
+                            <Input
+                              value={editingQA.title}
+                              onChange={(e) =>
+                                setEditingQA({ ...editingQA, title: e.target.value })
+                              }
+                            />
+                            <Input
+                              value={editingQA.answer || ""}
+                              onChange={(e) =>
+                                setEditingQA({ ...editingQA, answer: e.target.value })
+                              }
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                  if (editingQA) {
+                                    updateQAMutation.mutate({
+                                      id: editingQA.id,
+                                      title: editingQA.title,
+                                      answer: editingQA.answer,
+                                    })
+                                  }
+                                }}
+                                disabled={updateQAMutation.isPending}
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingQA(null)}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex-1">
+                              <div className="font-medium">{qa.title}</div>
+                              <div className="text-sm text-muted-foreground">{qa.answer}</div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingQA(qa)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => deleteQAMutation.mutate(qa.id)}
+                                disabled={deleteQAMutation.isPending}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No Q&As yet</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Topic Management */}
+        {(USE_REAL_API || FORCE_REAL_API) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Topic Management</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Add New Topic</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Topic name..."
+                    value={newTopicName}
+                    onChange={(e) => setNewTopicName(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      if (newTopicName) {
+                        createTopicMutation.mutate(newTopicName)
+                      }
+                    }}
+                    disabled={!newTopicName || createTopicMutation.isPending}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Topic
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>Existing Topics</Label>
+                {topicsQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading...</div>
+                ) : topicsQuery.data && topicsQuery.data.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {topicsQuery.data.map((topic) => (
+                      <Badge
+                        key={topic.id}
+                        variant="secondary"
+                        className="flex items-center gap-2 px-3 py-1"
+                      >
+                        {topic.name}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-4 w-4 p-0"
+                          onClick={() => deleteTopicMutation.mutate(topic.id)}
+                          disabled={deleteTopicMutation.isPending}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No topics yet</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -265,4 +531,3 @@ export function SettingsPage() {
     </div>
   )
 }
-

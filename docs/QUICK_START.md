@@ -21,7 +21,7 @@ VITE_WS_BASE_URL=wss://api.uzcall.uzbek-talim.uz/api
 EOF
 
 # 2. Deploy
-./deploy.sh production
+./scripts/deploy.sh production
 ```
 
 ### Variant B: Manual

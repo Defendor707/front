@@ -19,7 +19,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { timeAgo } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { USE_REAL_API, FORCE_REAL_API } from "@/lib/apiConfig"
-import { listChats, listUsers, sendChatMessage } from "@/services/api"
+import { listChats, sendChatMessage } from "@/services/api"
 import { queryKeys } from "@/services/queryKeys"
 import type { ChatStatus } from "@/types/models"
 
@@ -34,11 +34,6 @@ export function ChatsPage() {
   const [page, setPage] = useState(1)
   const pageSize = 8
 
-  const usersQuery = useQuery({
-    queryKey: queryKeys.users,
-    queryFn: listUsers,
-  })
-
   const chatsQuery = useQuery({
     queryKey: queryKeys.chats({ query, status, page, pageSize }),
     queryFn: () => listChats({ query, status, page, pageSize }),
@@ -47,19 +42,10 @@ export function ChatsPage() {
 
   const createChatMutation = useMutation({
     mutationFn: async () => {
-      // Demo: birinchi foydalanuvchini tanlash
-      const firstUser = usersQuery.data?.[0]
-      if (!firstUser) throw new Error("No users available")
-
       // Yangi chat yaratish (backend'da real bo'lsa, API chaqiruvi)
       const response = await sendChatMessage({
-        userId: firstUser.id,
+        userId: `u_${Date.now()}`,
         message: "Salom, AI yordamchi bilan gaplashmoqchiman.",
-        userContext: {
-          name: firstUser.fullName,
-          phone: firstUser.phone,
-          language: firstUser.language,
-        },
       })
 
       return response.chatId
@@ -71,8 +57,6 @@ export function ChatsPage() {
       navigate(`/chats/${chatId}`)
     },
   })
-
-  const usersById = new Map(usersQuery.data?.map((u) => [u.id, u]) ?? [])
 
   const pageCount = useMemo(() => {
     const total = chatsQuery.data?.total ?? 0
@@ -90,14 +74,14 @@ export function ChatsPage() {
         <div>
           <h2 className="text-lg font-semibold">AI Chats</h2>
           <p className="text-sm text-muted-foreground">
-            Browse conversations, AI summaries, and user details.
+            Browse conversations, AI summaries, and topics.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             onClick={() => createChatMutation.mutate()}
-            disabled={createChatMutation.isPending || !usersQuery.data?.length}
+            disabled={createChatMutation.isPending}
           >
             <MessageSquarePlus className="mr-2 h-4 w-4" />
             New chat
@@ -126,7 +110,7 @@ export function ChatsPage() {
               setQuery(e.target.value)
               setPage(1)
             }}
-            placeholder="Search by user, phone, topic, tags..."
+            placeholder="Search by topic, tags..."
             className="pl-9"
           />
         </div>
@@ -137,7 +121,6 @@ export function ChatsPage() {
           <Table className="min-w-[760px]">
           <TableHeader>
             <TableRow>
-              <TableHead>User</TableHead>
               <TableHead>Topic</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Sentiment</TableHead>
@@ -149,7 +132,7 @@ export function ChatsPage() {
               <>
                 {Array.from({ length: 6 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={5}>
+                    <TableCell colSpan={4}>
                       <Skeleton className="h-8 w-full" />
                     </TableCell>
                   </TableRow>
@@ -157,17 +140,8 @@ export function ChatsPage() {
               </>
             ) : (
               (chatsQuery.data?.items ?? []).map((c) => {
-                const user = usersById.get(c.userId)
                 return (
                   <TableRow key={c.id}>
-                    <TableCell className="font-medium">
-                      <div className="leading-tight">
-                        <div>{user?.fullName ?? c.userId}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {user?.phone ?? "—"}
-                        </div>
-                      </div>
-                    </TableCell>
                     <TableCell>
                       <Link
                         to={`/chats/${c.id}`}

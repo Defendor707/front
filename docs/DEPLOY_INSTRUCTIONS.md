@@ -24,7 +24,7 @@ Agar SSL allaqachon o'rnatilgan bo'lsa:
 
 ```bash
 cd /home/azureuser/frontend
-./quick-deploy.sh
+./scripts/quick-deploy.sh
 ```
 
 ### 3. Oddiy Deployment (HTTP)
@@ -33,7 +33,7 @@ Agar faqat HTTP kerak bo'lsa:
 
 ```bash
 cd /home/azureuser/frontend
-./deploy.sh production
+./scripts/deploy.sh production
 ```
 
 ## 📋 Talablar
@@ -57,7 +57,7 @@ SSL certificate avtomatik o'rnatiladi `deploy-with-ssl.sh` skripti orqali.
 Agar qo'lda o'rnatish kerak bo'lsa:
 
 ```bash
-sudo ./setup-ssl-webroot.sh
+sudo ./scripts/setup-ssl-webroot.sh
 ```
 
 Keyin:
@@ -136,12 +136,12 @@ npm run build
 ## 📝 Fayllar
 
 - `deploy-with-ssl.sh` - To'liq deployment (HTTP + SSL)
-- `quick-deploy.sh` - Tezkor deployment (SSL mavjud bo'lsa)
-- `deploy.sh` - Oddiy deployment (HTTP)
+- `scripts/quick-deploy.sh` - Tezkor deployment (SSL mavjud bo'lsa)
+- `scripts/deploy.sh` - Oddiy deployment (HTTP)
 - `docker-compose.yml` - HTTP konfiguratsiyasi
 - `docker-compose-ssl.yml` - HTTPS konfiguratsiyasi
-- `nginx.conf` - HTTP nginx config
-- `nginx-ssl.conf` - HTTPS nginx config
+- `config/nginx.conf` - HTTP nginx config
+- `config/nginx-ssl.conf` - HTTPS nginx config
 
 ## ✅ Deployment muvaffaqiyatli bo'lgandan keyin
 
